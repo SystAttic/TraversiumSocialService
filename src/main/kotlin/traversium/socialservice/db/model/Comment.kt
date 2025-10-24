@@ -18,15 +18,12 @@ class Comment(
     @Column(nullable = false, name = "user_id")
     val userId: Long,
 
-    @Column(nullable = false, name = "node_id")
-    val nodeId: Long,
+    @Column(nullable = false, name = "album_id")
+    val albumId: Long,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     val parent: Comment? = null,
-
-    @OneToMany(mappedBy = "parent", cascade = [CascadeType.REMOVE], fetch = FetchType.LAZY)
-    val replies: MutableList<Comment> = mutableListOf(),
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

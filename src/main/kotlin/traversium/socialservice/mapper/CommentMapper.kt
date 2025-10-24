@@ -19,7 +19,7 @@ class CommentMapper(
             commentId = entity.commentId,
             content = entity.content,
             userId = entity.userId,
-            nodeId = entity.nodeId,
+            albumId = entity.albumId,
             parentId = entity.parent?.commentId,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,
@@ -27,11 +27,11 @@ class CommentMapper(
         )
     }
 
-    fun toEntity(dto: CreateCommentDto, authorId: Long, nodeId: Long, parent: Comment?): Comment {
+    fun toEntity(dto: CreateCommentDto, authorId: Long, albumId: Long, parent: Comment?): Comment {
         return Comment(
             content = dto.content,
             userId = authorId,
-            nodeId = nodeId,
+            albumId = albumId,
             parent = parent
         )
     }

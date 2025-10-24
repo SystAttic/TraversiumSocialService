@@ -25,7 +25,7 @@ class CommentController(
     private val commentService: CommentService
 ): Logging {
 
-    @PostMapping("/nodes/{nodeId}/comments")
+    @PostMapping("/albums/{albumId}/comments")
     @Operation(
         operationId = "createComment",
         tags = ["Comment"],
@@ -51,21 +51,21 @@ class CommentController(
         ]
     )
     fun createComment(
-        @PathVariable nodeId: Long,
+        @PathVariable albumId: Long,
         @RequestBody createDto: CreateCommentDto
     ): ResponseEntity<CommentDto> {
 
         val authorId = 1L //TODO: Replace with real userId from authentication
 
         return try {
-            val savedComment = commentService.createComment(nodeId, authorId, createDto)
-            logger.info("Comment with ID ${savedComment.commentId} created on node $nodeId by user $authorId")
+            val savedComment = commentService.createComment(albumId, authorId, createDto)
+            logger.info("Comment with ID ${savedComment.commentId} created on album $albumId by user $authorId")
             ResponseEntity.status(HttpStatus.CREATED).body(savedComment)
         } catch(ex: CommentNotFoundException) {
             logger.warn("Failed to create comment: ${ex.message}")
             ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
-            logger.error("An unexpected error occurred while creating a comment for node $nodeId", ex)
+            logger.error("An unexpected error occurred while creating a comment on album $albumId", ex)
             ResponseEntity.badRequest().build()
         }
     }
@@ -156,15 +156,15 @@ class CommentController(
         }
     }
 
-    //TODO: add a 404 response if node does not exist
-    @GetMapping("/nodes/{nodeId}/comments")
+    //TODO: add a 404 response if album does not exist
+    @GetMapping("/albums/{albumId}/comments")
     @Operation(
         operationId = "getComments",
-        summary = "Get top-level comments for a node.",
+        summary = "Get top-level comments for an album.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "Successfully retrieved a paginated list of comments. The list will be empty if the node has no comments or if the node does not exist.",
+                description = "Successfully retrieved a paginated list of comments. The list will be empty if the album has no comments or if the album does not exist.",
                 content = [Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = Page::class)
@@ -173,11 +173,11 @@ class CommentController(
         ]
     )
     fun getComments(
-        @PathVariable nodeId: Long,
+        @PathVariable albumId: Long,
         pageable: Pageable
     ): ResponseEntity<Page<CommentDto>> {
         return try {
-            val commentsPage = commentService.getCommentsForNode(nodeId, pageable)
+            val commentsPage = commentService.getCommentsForAlbum(albumId, pageable)
             ResponseEntity.ok(commentsPage)
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while retrieving top-level comments.", ex)
@@ -249,6 +249,6 @@ class CommentController(
         }
     }
 
-    //TODO: add delete operation for all comments of a node
+    //TODO: add delete operation for all comments of an album
     //TODO: check for blocked users
 }
