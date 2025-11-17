@@ -20,7 +20,7 @@ class CommentService(
     private val commentMapper: CommentMapper
 ) {
     @Transactional
-    fun createComment(albumIdFromPath: Long, authorIdFromAuth: Long, createDto: CreateCommentDto): CommentDto {
+    fun createComment(mediaIdFromPath: Long, authorIdFromAuth: Long, createDto: CreateCommentDto): CommentDto {
         val parentComment: Comment? = createDto.parentId?.let { pid ->
             commentRepository.findById(pid)
                 .orElseThrow { CommentNotFoundException("Parent comment with Id $pid was not found") }
@@ -29,7 +29,7 @@ class CommentService(
         val newCommentEntity = commentMapper.toEntity(
             dto = createDto,
             authorId = authorIdFromAuth,
-            albumId = albumIdFromPath,
+            mediaId = mediaIdFromPath,
             parent = parentComment
         )
 
@@ -71,10 +71,10 @@ class CommentService(
         return commentMapper.toDto(comment)
     }
 
-    fun getCommentsForAlbum(albumId: Long, pageable: Pageable): Page<CommentDto> {
-        //TODO: preveri če album obstaja na TripService
+    fun getCommentsForAlbum(mediaId: Long, pageable: Pageable): Page<CommentDto> {
+        //TODO: preveri če media obstaja na TripService
 
-        val commentPage: Page<Comment> = commentRepository.findByAlbumIdAndParentIsNull(albumId, pageable)
+        val commentPage: Page<Comment> = commentRepository.findByMediaIdAndParentIsNull(mediaId, pageable)
         return commentPage.map { commentMapper.toDto(it) }
     }
 

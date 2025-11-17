@@ -9,7 +9,7 @@ import traversium.socialservice.db.model.Comment
 @Repository
 interface CommentRepository : JpaRepository<Comment, Long> {
 
-    fun findByAlbumIdAndParentIsNull(albumId: Long, pageable: Pageable): Page<Comment>
+    fun findByMediaIdAndParentIsNull(mediaId: Long, pageable: Pageable): Page<Comment>
 
     fun findByParent_CommentId(parentId: Long, pageable: Pageable): Page<Comment>
 

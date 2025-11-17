@@ -25,7 +25,7 @@ class CommentController(
     private val commentService: CommentService
 ): Logging {
 
-    @PostMapping("/albums/{albumId}/comments")
+    @PostMapping("/media/{mediaId}/comments")
     @Operation(
         operationId = "createComment",
         tags = ["Comment"],
@@ -51,21 +51,21 @@ class CommentController(
         ]
     )
     fun createComment(
-        @PathVariable albumId: Long,
+        @PathVariable mediaId: Long,
         @RequestBody createDto: CreateCommentDto
     ): ResponseEntity<CommentDto> {
 
         val authorId = 1L //TODO: Replace with real userId from authentication
 
         return try {
-            val savedComment = commentService.createComment(albumId, authorId, createDto)
-            logger.info("Comment with ID ${savedComment.commentId} created on album $albumId by user $authorId")
+            val savedComment = commentService.createComment(mediaId, authorId, createDto)
+            logger.info("Comment with ID ${savedComment.commentId} created on media $mediaId by user $authorId")
             ResponseEntity.status(HttpStatus.CREATED).body(savedComment)
         } catch(ex: CommentNotFoundException) {
             logger.warn("Failed to create comment: ${ex.message}")
             ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
-            logger.error("An unexpected error occurred while creating a comment on album $albumId", ex)
+            logger.error("An unexpected error occurred while creating a comment on media $mediaId", ex)
             ResponseEntity.badRequest().build()
         }
     }
@@ -157,14 +157,14 @@ class CommentController(
     }
 
     //TODO: add a 404 response if album does not exist
-    @GetMapping("/albums/{albumId}/comments")
+    @GetMapping("/media/{mediaId}/comments")
     @Operation(
         operationId = "getComments",
-        summary = "Get top-level comments for an album.",
+        summary = "Get top-level comments for a media item.",
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "Successfully retrieved a paginated list of comments. The list will be empty if the album has no comments or if the album does not exist.",
+                description = "Successfully retrieved a paginated list of comments. The list will be empty if the the media has no comments or if the media does not exist.",
                 content = [Content(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = Page::class)
@@ -173,11 +173,11 @@ class CommentController(
         ]
     )
     fun getComments(
-        @PathVariable albumId: Long,
+        @PathVariable mediaId: Long,
         pageable: Pageable
     ): ResponseEntity<Page<CommentDto>> {
         return try {
-            val commentsPage = commentService.getCommentsForAlbum(albumId, pageable)
+            val commentsPage = commentService.getCommentsForAlbum(mediaId, pageable)
             ResponseEntity.ok(commentsPage)
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while retrieving top-level comments.", ex)

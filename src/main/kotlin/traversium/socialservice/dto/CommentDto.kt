@@ -6,7 +6,7 @@ data class CommentDto(
     val commentId: Long?,
     val content: String,
     val userId: Long,
-    val albumId: Long,
+    val mediaId: Long,
     val parentId: Long?,
     val createdAt: OffsetDateTime? = null,
     val updatedAt: OffsetDateTime? = null,

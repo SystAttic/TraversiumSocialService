@@ -18,8 +18,8 @@ class Comment(
     @Column(nullable = false, name = "user_id")
     val userId: Long,
 
-    @Column(nullable = false, name = "album_id")
-    val albumId: Long,
+    @Column(nullable = false, name = "media_id")
+    val mediaId: Long,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
