@@ -1,7 +1,6 @@
 package traversium.socialservice.dto
 
-import traversium.socialservice.db.model.Comment
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 data class CommentDto(
     val commentId: Long?,
@@ -9,8 +8,8 @@ data class CommentDto(
     val userId: Long,
     val albumId: Long,
     val parentId: Long?,
-    val createdAt: LocalDateTime? = null,
-    val updatedAt: LocalDateTime? = null,
+    val createdAt: OffsetDateTime? = null,
+    val updatedAt: OffsetDateTime? = null,
 
     val replyCount: Long = 0
 )

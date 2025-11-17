@@ -3,7 +3,7 @@ package traversium.socialservice.db.model
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
-import java.time.LocalDateTime
+import java.time.OffsetDateTime
 
 @Entity
 @Table(name = "comments")
@@ -27,9 +27,9 @@ class Comment(
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
-    var createdAt: LocalDateTime? = null,
+    var createdAt: OffsetDateTime? = null,
 
     @UpdateTimestamp
     @Column(nullable = false)
-    var updatedAt: LocalDateTime? = null
+    var updatedAt: OffsetDateTime? = null
 )
