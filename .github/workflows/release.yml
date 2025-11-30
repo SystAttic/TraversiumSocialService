@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       next_snapshot_version:
-        description: 'Next SNAPSHOT version (e.g., 0.0.2-SNAPSHOT)'
+        description: 'Next SNAPSHOT version (e.g., 1.1.0-SNAPSHOT)'
         required: true
         type: string
 
