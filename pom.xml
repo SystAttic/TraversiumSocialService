@@ -29,6 +29,10 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
         </dependency>
@@ -50,6 +54,41 @@
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.3.0</version>
+        </dependency>
+
+        <!-- Firebase Admin SDK -->
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.7.0</version>
+        </dependency>
+
+        <!-- Multitenancy -->
+        <dependency>
+            <groupId>traversium</groupId>
+            <artifactId>common-multitenancy</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <!-- Kafka -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>3.3.10</version>
+        </dependency>
+
+        <!-- Notifications -->
+        <dependency>
+            <groupId>traversium</groupId>
+            <artifactId>notification-models</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+
+        <!-- Audit -->
+        <dependency>
+            <groupId>traversium</groupId>
+            <artifactId>audit-models</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -87,7 +126,6 @@
                     </args>
                     <compilerPlugins>
                         <plugin>spring</plugin>
-                        <plugin>jpa</plugin>
                     </compilerPlugins>
                     <jvmTarget>${java.version}</jvmTarget>
                 </configuration>
@@ -101,4 +139,29 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/SystAttic/TraversiumCommonMultitenancy</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>github-notification</id>
+            <url>https://maven.pkg.github.com/SystAttic/TraversiumNotificationService</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>github-audit</id>
+            <url>https://maven.pkg.github.com/SystAttic/TraversiumAuditService</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
 </project>

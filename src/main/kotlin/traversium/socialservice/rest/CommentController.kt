@@ -9,11 +9,14 @@ import org.apache.logging.log4j.kotlin.Logging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
 import traversium.socialservice.dto.UpdateCommentDto
 import traversium.socialservice.exceptions.*
+import traversium.socialservice.security.TraversiumAuthentication
+import traversium.socialservice.security.TraversiumPrincipal
 import traversium.socialservice.service.CommentService
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -24,6 +27,28 @@ import org.springframework.data.domain.Pageable
 class CommentController(
     private val commentService: CommentService
 ): Logging {
+
+    private fun getCurrentUserId(): Long {
+        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
+            ?: throw IllegalStateException("Authentication not found")
+        
+        val principal = authentication.principal as? TraversiumPrincipal
+            ?: throw IllegalStateException("Principal not found")
+        
+        // Convert Firebase UID (String) to Long by hashing
+        // Note: This is a simple approach - you may want to call UserService to get the internal user ID
+        return kotlin.math.abs(principal.uid.hashCode().toLong())
+    }
+
+    private fun getCurrentUserFirebaseId(): String {
+        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
+            ?: throw IllegalStateException("Authentication not found")
+        
+        val principal = authentication.principal as? TraversiumPrincipal
+            ?: throw IllegalStateException("Principal not found")
+        
+        return principal.uid
+    }
 
     @PostMapping("/media/{mediaId}/comments")
     @Operation(
@@ -55,10 +80,11 @@ class CommentController(
         @RequestBody createDto: CreateCommentDto
     ): ResponseEntity<CommentDto> {
 
-        val authorId = 1L //TODO: Replace with real userId from authentication
+        val authorId = getCurrentUserId()
+        val authorFirebaseId = getCurrentUserFirebaseId()
 
         return try {
-            val savedComment = commentService.createComment(mediaId, authorId, createDto)
+            val savedComment = commentService.createComment(mediaId, authorId, authorFirebaseId, createDto)
             logger.info("Comment with ID ${savedComment.commentId} created on media $mediaId by user $authorId")
             ResponseEntity.status(HttpStatus.CREATED).body(savedComment)
         } catch(ex: CommentNotFoundException) {
@@ -98,10 +124,11 @@ class CommentController(
         @RequestBody updateDto: UpdateCommentDto
     ): ResponseEntity<CommentDto> {
 
-        val authorId = 1L //TODO: Replace with real userId from authentication
+        val authorId = getCurrentUserId()
+        val authorFirebaseId = getCurrentUserFirebaseId()
 
         return try {
-            val updatedComment = commentService.updateComment(commentId, authorId, updateDto)
+            val updatedComment = commentService.updateComment(commentId, authorId, authorFirebaseId, updateDto)
             logger.info("Comment with ID $commentId updated by user $authorId")
             ResponseEntity.ok(updatedComment)
         } catch (ex: CommentNotFoundException) {
@@ -138,10 +165,11 @@ class CommentController(
     )
     fun deleteComment(@PathVariable commentId: Long): ResponseEntity<Void> {
 
-        val authorId = 1L //TODO: Replace with real userId from authentication
+        val authorId = getCurrentUserId()
+        val authorFirebaseId = getCurrentUserFirebaseId()
 
         return try {
-            commentService.deleteComment(commentId, authorId)
+            commentService.deleteComment(commentId, authorId, authorFirebaseId)
             logger.info("Comment with ID $commentId deleted by user $authorId")
             ResponseEntity.status(HttpStatus.NO_CONTENT).build()
         } catch (ex: CommentNotFoundException) {
