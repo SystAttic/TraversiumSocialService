@@ -105,11 +105,11 @@ class CommentService(
         val auditEvent = AuditStreamData(
             timestamp = OffsetDateTime.now(),
             userId = userId,
-            activityType = ActivityType.USER_ACTIVITY,
+            activityType = ActivityType.SOCIAL_ACTIVITY,
             action = action,
-            entityType = null, // TODO: Add COMMENT to EntityType enum in audit-models
+            entityType = EntityType.COMMENT,
             entityId = commentId,
-            tripId = null,
+            tripId = null, // TODO: Extract tripId from mediaId if available
             metadata = mapOf(
                 "commentId" to (commentId ?: ""),
                 "mediaId" to mediaId,

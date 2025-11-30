@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import traversium.audit.kafka.ActivityType
 import traversium.audit.kafka.AuditStreamData
+import traversium.audit.kafka.EntityType
 import traversium.notification.kafka.NotificationStreamData
 import traversium.socialservice.db.repository.LikeRepository
 import traversium.socialservice.dto.LikeCountDto
@@ -72,11 +73,11 @@ class LikeService(
         val auditEvent = AuditStreamData(
             timestamp = OffsetDateTime.now(),
             userId = userId,
-            activityType = ActivityType.USER_ACTIVITY,
+            activityType = ActivityType.SOCIAL_ACTIVITY,
             action = action,
-            entityType = null, // TODO: Add LIKE to EntityType enum in audit-models
+            entityType = EntityType.LIKE,
             entityId = likeId,
-            tripId = null,
+            tripId = null, // TODO: Extract tripId from mediaId if available
             metadata = mapOf(
                 "likeId" to (likeId ?: ""),
                 "mediaId" to mediaId,
