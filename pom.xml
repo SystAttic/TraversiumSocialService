@@ -144,6 +144,9 @@
         <repository>
             <id>github</id>
             <url>https://maven.pkg.github.com/SystAttic/TraversiumCommonMultitenancy</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
