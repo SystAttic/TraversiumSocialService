@@ -13,13 +13,13 @@ class Comment(
     val commentId: Long? = null,
 
     @Column(nullable = false, columnDefinition = "TEXT")
-    var content: String,
+    var content: String? = null,
 
     @Column(nullable = false, name = "user_id")
-    val userId: Long,
+    val userId: Long? = null,
 
     @Column(nullable = false, name = "media_id")
-    val mediaId: Long,
+    val mediaId: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")

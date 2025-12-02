@@ -26,28 +26,6 @@ class LikeController(
     private val likeService: LikeService
 ) : Logging {
 
-    private fun getCurrentUserId(): Long {
-        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
-            ?: throw IllegalStateException("Authentication not found")
-
-        val principal = authentication.principal as? TraversiumPrincipal
-            ?: throw IllegalStateException("Principal not found")
-
-        // Convert Firebase UID (String) to Long by hashing
-        // Note: This is a simple approach - you may want to call UserService to get the internal user ID
-        return kotlin.math.abs(principal.uid.hashCode().toLong())
-    }
-
-    private fun getCurrentUserFirebaseId(): String {
-        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
-            ?: throw IllegalStateException("Authentication not found")
-
-        val principal = authentication.principal as? TraversiumPrincipal
-            ?: throw IllegalStateException("Principal not found")
-
-        return principal.uid
-    }
-
     @PostMapping("/media/{mediaId}/likes")
     @Operation(
         operationId = "likeMedia",
@@ -74,15 +52,11 @@ class LikeController(
         ]
     )
     fun likeMedia(@PathVariable mediaId: Long): ResponseEntity<LikeDto> {
-        val userId = getCurrentUserId()
-        val userFirebaseId = getCurrentUserFirebaseId()
-
         return try {
-            val like = likeService.likeMedia(mediaId, userId, userFirebaseId)
-            logger.info("User $userId liked media $mediaId")
+            val like = likeService.likeMedia(mediaId)
             ResponseEntity.status(HttpStatus.CREATED).body(like)
         } catch (ex: DuplicateLikeException) {
-            logger.warn("User $userId attempted to like already liked media $mediaId: ${ex.message}")
+            logger.warn("Attempted to like already liked media $mediaId: ${ex.message}")
             ResponseEntity.status(HttpStatus.CONFLICT).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while liking media $mediaId", ex)
@@ -112,12 +86,8 @@ class LikeController(
         ]
     )
     fun unlikeMedia(@PathVariable mediaId: Long): ResponseEntity<Void> {
-        val userId = getCurrentUserId()
-        val userFirebaseId = getCurrentUserFirebaseId()
-
         return try {
-            likeService.unlikeMedia(mediaId, userId, userFirebaseId)
-            logger.info("User $userId unliked media $mediaId")
+            likeService.unlikeMedia(mediaId)
             ResponseEntity.status(HttpStatus.NO_CONTENT).build()
         } catch (ex: LikeNotFoundException) {
             logger.warn("Failed to unlike media $mediaId: ${ex.message}")
@@ -151,8 +121,7 @@ class LikeController(
     )
     fun getLikeCount(@PathVariable mediaId: Long): ResponseEntity<LikeCountDto> {
         return try {
-            val userId = getCurrentUserId()
-            val likeCount = likeService.getLikeCount(mediaId, userId)
+            val likeCount = likeService.getLikeCount(mediaId)
             ResponseEntity.ok(likeCount)
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while retrieving like count for media $mediaId", ex)
@@ -183,8 +152,7 @@ class LikeController(
     )
     fun checkIfLiked(@PathVariable mediaId: Long): ResponseEntity<Boolean> {
         return try {
-            val userId = getCurrentUserId()
-            val hasLiked = likeService.hasUserLiked(mediaId, userId)
+            val hasLiked = likeService.hasUserLiked(mediaId)
             ResponseEntity.ok(hasLiked)
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while checking like status for media $mediaId", ex)

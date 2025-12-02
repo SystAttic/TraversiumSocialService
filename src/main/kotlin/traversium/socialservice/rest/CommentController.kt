@@ -28,28 +28,6 @@ class CommentController(
     private val commentService: CommentService
 ): Logging {
 
-    private fun getCurrentUserId(): Long {
-        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
-            ?: throw IllegalStateException("Authentication not found")
-        
-        val principal = authentication.principal as? TraversiumPrincipal
-            ?: throw IllegalStateException("Principal not found")
-        
-        // Convert Firebase UID (String) to Long by hashing
-        // Note: This is a simple approach - you may want to call UserService to get the internal user ID
-        return kotlin.math.abs(principal.uid.hashCode().toLong())
-    }
-
-    private fun getCurrentUserFirebaseId(): String {
-        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
-            ?: throw IllegalStateException("Authentication not found")
-        
-        val principal = authentication.principal as? TraversiumPrincipal
-            ?: throw IllegalStateException("Principal not found")
-        
-        return principal.uid
-    }
-
     @PostMapping("/media/{mediaId}/comments")
     @Operation(
         operationId = "createComment",
@@ -79,13 +57,8 @@ class CommentController(
         @PathVariable mediaId: Long,
         @RequestBody createDto: CreateCommentDto
     ): ResponseEntity<CommentDto> {
-
-        val authorId = getCurrentUserId()
-        val authorFirebaseId = getCurrentUserFirebaseId()
-
         return try {
-            val savedComment = commentService.createComment(mediaId, authorId, authorFirebaseId, createDto)
-            logger.info("Comment with ID ${savedComment.commentId} created on media $mediaId by user $authorId")
+            val savedComment = commentService.createComment(mediaId, createDto)
             ResponseEntity.status(HttpStatus.CREATED).body(savedComment)
         } catch(ex: CommentNotFoundException) {
             logger.warn("Failed to create comment: ${ex.message}")
@@ -123,19 +96,14 @@ class CommentController(
         @PathVariable commentId: Long,
         @RequestBody updateDto: UpdateCommentDto
     ): ResponseEntity<CommentDto> {
-
-        val authorId = getCurrentUserId()
-        val authorFirebaseId = getCurrentUserFirebaseId()
-
         return try {
-            val updatedComment = commentService.updateComment(commentId, authorId, authorFirebaseId, updateDto)
-            logger.info("Comment with ID $commentId updated by user $authorId")
+            val updatedComment = commentService.updateComment(commentId,  updateDto)
             ResponseEntity.ok(updatedComment)
         } catch (ex: CommentNotFoundException) {
             logger.warn("Failed to update comment: ${ex.message}")
             ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: UnauthorizedCommentAccessException) {
-            logger.warn("Unauthorized attempt to update comment $commentId by user $authorId")
+            logger.warn("Unauthorized attempt to update comment $commentId")
             ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while updating comment $commentId", ex)
@@ -165,18 +133,14 @@ class CommentController(
     )
     fun deleteComment(@PathVariable commentId: Long): ResponseEntity<Void> {
 
-        val authorId = getCurrentUserId()
-        val authorFirebaseId = getCurrentUserFirebaseId()
-
         return try {
-            commentService.deleteComment(commentId, authorId, authorFirebaseId)
-            logger.info("Comment with ID $commentId deleted by user $authorId")
+            commentService.deleteComment(commentId)
             ResponseEntity.status(HttpStatus.NO_CONTENT).build()
         } catch (ex: CommentNotFoundException) {
             logger.warn("Failed to delete comment: ${ex.message}")
             ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: UnauthorizedCommentAccessException) {
-            logger.warn("Unauthorized attempt to delete comment $commentId by user $authorId")
+            logger.warn("Unauthorized attempt to delete comment $commentId")
             ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while deleting comment $commentId", ex)

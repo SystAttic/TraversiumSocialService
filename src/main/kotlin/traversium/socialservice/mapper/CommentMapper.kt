@@ -5,6 +5,7 @@ import traversium.socialservice.db.model.Comment
 import traversium.socialservice.db.repository.CommentRepository
 import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
+import traversium.socialservice.exceptions.InvalidCommentDataException
 
 @Component
 class CommentMapper(
@@ -12,14 +13,13 @@ class CommentMapper(
 ) {
 
     fun toDto(entity: Comment): CommentDto {
-        // Calculate the reply count using the repository.
         val replyCount = commentRepository.countByParent_CommentId(entity.commentId!!)
 
         return CommentDto(
             commentId = entity.commentId,
-            content = entity.content,
-            userId = entity.userId,
-            mediaId = entity.mediaId,
+            content = entity.content ?: throw InvalidCommentDataException("Comment content cannot be null"),
+            userId = entity.userId ?: throw InvalidCommentDataException("Comment userId cannot be null"),
+            mediaId = entity.mediaId ?: throw InvalidCommentDataException("Comment mediaId cannot be null"),
             parentId = entity.parent?.commentId,
             createdAt = entity.createdAt,
             updatedAt = entity.updatedAt,

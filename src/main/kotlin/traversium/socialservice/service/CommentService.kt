@@ -1,5 +1,6 @@
 package traversium.socialservice.service
 
+import org.apache.logging.log4j.kotlin.Logging
 import org.hibernate.annotations.CreationTimestamp
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.Page
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional
 import traversium.audit.kafka.ActivityType
 import traversium.audit.kafka.AuditStreamData
 import traversium.audit.kafka.EntityType
+import traversium.notification.kafka.ActionType
 import traversium.notification.kafka.NotificationStreamData
 import traversium.socialservice.db.model.Comment
 import traversium.socialservice.db.repository.CommentRepository
@@ -25,9 +27,12 @@ class CommentService(
     private val commentRepository: CommentRepository,
     private val commentMapper: CommentMapper,
     private val eventPublisher: ApplicationEventPublisher
-) {
+) : SocialService(), Logging {
     @Transactional
-    fun createComment(mediaIdFromPath: Long, authorIdFromAuth: Long, authorFirebaseId: String, createDto: CreateCommentDto): CommentDto {
+    fun createComment(mediaIdFromPath: Long, createDto: CreateCommentDto): CommentDto {
+        val authorIdFromAuth = getCurrentUserId()
+        val authorFirebaseId = getCurrentUserFirebaseId()
+
         val parentComment: Comment? = createDto.parentId?.let { pid ->
             commentRepository.findById(pid)
                 .orElseThrow { CommentNotFoundException("Parent comment with Id $pid was not found") }
@@ -48,11 +53,16 @@ class CommentService(
         // Publish audit event
         publishCommentAuditEvent(authorFirebaseId, "COMMENT_CREATED", savedCommentEntity.commentId, mediaIdFromPath)
 
+        logger.info("Comment with ID ${savedCommentEntity.commentId} created on media $mediaIdFromPath by user $authorIdFromAuth")
+
         return commentMapper.toDto(savedCommentEntity)
     }
 
     @Transactional
-    fun updateComment(commentId: Long, authorIdFromAuth: Long, authorFirebaseId: String, updateDto: UpdateCommentDto): CommentDto {
+    fun updateComment(commentId: Long, updateDto: UpdateCommentDto): CommentDto {
+        val authorFirebaseId = getCurrentUserFirebaseId()
+        val authorIdFromAuth = getCurrentUserId()
+
         val comment = commentRepository.findById(commentId)
             .orElseThrow { CommentNotFoundException("Comment with id $commentId was not found") }
 
@@ -65,13 +75,17 @@ class CommentService(
         val updatedComment = commentRepository.save(comment)
 
         // Publish audit event
-        publishCommentAuditEvent(authorFirebaseId, "COMMENT_UPDATED", commentId, comment.mediaId)
+        publishCommentAuditEvent(authorFirebaseId, "COMMENT_UPDATED", commentId, comment.mediaId!!)
+        logger.info("Comment with ID $commentId updated by user $authorIdFromAuth")
 
         return commentMapper.toDto(updatedComment)
     }
 
     @Transactional
-    fun deleteComment(commentId: Long, authorIdFromAuth: Long, authorFirebaseId: String){
+    fun deleteComment(commentId: Long){
+        val authorFirebaseId = getCurrentUserFirebaseId()
+        val authorIdFromAuth = getCurrentUserId()
+
         val comment = commentRepository.findById(commentId)
             .orElseThrow { CommentNotFoundException("Comment with id $commentId was not found") }
 
@@ -81,9 +95,10 @@ class CommentService(
 
         val mediaId = comment.mediaId
         commentRepository.delete(comment)
+        logger.info("Comment with ID $commentId deleted by user $authorIdFromAuth")
 
         // Publish audit event
-        publishCommentAuditEvent(authorFirebaseId, "COMMENT_DELETED", commentId, mediaId)
+        publishCommentAuditEvent(authorFirebaseId, "COMMENT_DELETED", commentId, mediaId!!)
     }
 
     private fun publishCommentNotification(comment: Comment, parentComment: Comment?) {
@@ -94,9 +109,10 @@ class CommentService(
             senderId = comment.userId.toString(), // This should be Firebase UID or username
             receiverIds = emptyList(), // TODO: Get actual receiver IDs (media owner or parent comment author)
             collectionReferenceId = null,
-            nodeReferenceId = comment.mediaId,
+            nodeReferenceId = null,
             commentReferenceId = comment.commentId,
-            action = if (parentComment != null) "COMMENT_REPLY" else "COMMENT_CREATED"
+            action = if (parentComment != null) ActionType.REPLY else ActionType.ADD,
+            mediaReferenceId = comment.mediaId,
         )
         eventPublisher.publishEvent(notification)
     }
