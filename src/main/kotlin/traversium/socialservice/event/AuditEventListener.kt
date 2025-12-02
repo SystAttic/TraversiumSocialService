@@ -1,11 +1,14 @@
 package traversium.socialservice.event
 
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.internals.RecordHeader
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.kafka.core.KafkaTemplate
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import traversium.audit.kafka.AuditStreamData
+import traversium.commonmultitenancy.TenantContext
 import traversium.socialservice.kafka.KafkaProperties
 import java.util.concurrent.TimeUnit
 
@@ -18,10 +21,14 @@ class AuditEventListener(
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun sendAuditDataToKafka(event: AuditStreamData) {
-        kafkaTemplate.send(
-            kafkaProperties.auditTopic!!,
-            event,
-        )[kafkaProperties.clientConfirmationTimeout, TimeUnit.SECONDS]
+        val tenantId = TenantContext.getTenant()
+
+        val record = ProducerRecord<String, Any>(kafkaProperties.auditTopic!!, event)
+        tenantId.let {
+            record.headers().add(RecordHeader("tenantId", it.toByteArray()))
+        }
+
+        kafkaTemplate.send(record)
     }
 }
 
