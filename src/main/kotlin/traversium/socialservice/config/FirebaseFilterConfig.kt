@@ -23,6 +23,10 @@ class FirebaseFilterConfig {
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth
+                    .requestMatchers("/actuator/health/**").permitAll()
+                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers("/actuator/prometheus/**").permitAll()
+                    .requestMatchers("/actuator/prometheus").permitAll()
                     .requestMatchers("/rest/**").authenticated()
                     .requestMatchers(
                         "/swagger-ui/**",
