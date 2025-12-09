@@ -19,6 +19,7 @@ class CommentMapper(
             commentId = entity.commentId,
             content = entity.content ?: throw InvalidCommentDataException("Comment content cannot be null"),
             userId = entity.userId ?: throw InvalidCommentDataException("Comment userId cannot be null"),
+            firebaseId = entity.firebaseId ?: throw InvalidCommentDataException("Comment firebaseId cannot be null"),
             mediaId = entity.mediaId ?: throw InvalidCommentDataException("Comment mediaId cannot be null"),
             parentId = entity.parent?.commentId,
             createdAt = entity.createdAt,
@@ -27,10 +28,11 @@ class CommentMapper(
         )
     }
 
-    fun toEntity(dto: CreateCommentDto, authorId: Long, mediaId: Long, parent: Comment?): Comment {
+    fun toEntity(dto: CreateCommentDto, authorId: Long, firebaseId: String, mediaId: Long, parent: Comment?): Comment {
         return Comment(
             content = dto.content,
             userId = authorId,
+            firebaseId = firebaseId,
             mediaId = mediaId,
             parent = parent
         )

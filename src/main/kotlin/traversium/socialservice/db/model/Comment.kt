@@ -18,6 +18,9 @@ class Comment(
     @Column(nullable = false, name = "user_id")
     val userId: Long? = null,
 
+    @Column(nullable = false, name = "firebase_id")
+    val firebaseId: String,
+
     @Column(nullable = false, name = "media_id")
     val mediaId: Long? = null,
 

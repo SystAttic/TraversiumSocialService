@@ -10,6 +10,7 @@ import traversium.audit.kafka.AuditStreamData
 import traversium.audit.kafka.EntityType
 import traversium.notification.kafka.ActionType
 import traversium.notification.kafka.NotificationStreamData
+import traversium.socialservice.client.TripServiceClient
 import traversium.socialservice.db.repository.LikeRepository
 import traversium.socialservice.dto.LikeCountDto
 import traversium.socialservice.dto.LikeDto
@@ -24,7 +25,8 @@ import java.time.OffsetDateTime
 class LikeService(
     private val likeRepository: LikeRepository,
     private val likeMapper: LikeMapper,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val tripServiceClient: TripServiceClient
 ) : SocialService(), Logging {
 
     @Transactional
@@ -69,11 +71,11 @@ class LikeService(
     }
 
     private fun publishLikeNotification(userId: String, mediaId: Long) {
-        // TODO: Get media owner from TripService to send proper notification
+        val ownerId = tripServiceClient.getMediaOwner(mediaId)
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
             senderId = userId,
-            receiverIds = emptyList(), // TODO: Get actual receiver IDs (media owner)
+            receiverIds = listOf<String>(ownerId!!),
             collectionReferenceId = null,
             nodeReferenceId = null,
             commentReferenceId = null,

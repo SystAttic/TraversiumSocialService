@@ -12,6 +12,7 @@ import traversium.audit.kafka.AuditStreamData
 import traversium.audit.kafka.EntityType
 import traversium.notification.kafka.ActionType
 import traversium.notification.kafka.NotificationStreamData
+import traversium.socialservice.client.TripServiceClient
 import traversium.socialservice.db.model.Comment
 import traversium.socialservice.db.repository.CommentRepository
 import traversium.socialservice.dto.CommentDto
@@ -26,7 +27,8 @@ import java.time.OffsetDateTime
 class CommentService(
     private val commentRepository: CommentRepository,
     private val commentMapper: CommentMapper,
-    private val eventPublisher: ApplicationEventPublisher
+    private val eventPublisher: ApplicationEventPublisher,
+    private val tripServiceClient: TripServiceClient
 ) : SocialService(), Logging {
     @Transactional
     fun createComment(mediaIdFromPath: Long, createDto: CreateCommentDto): CommentDto {
@@ -41,6 +43,7 @@ class CommentService(
         val newCommentEntity = commentMapper.toEntity(
             dto = createDto,
             authorId = authorIdFromAuth,
+            firebaseId = authorFirebaseId,
             mediaId = mediaIdFromPath,
             parent = parentComment
         )
@@ -103,11 +106,12 @@ class CommentService(
 
     private fun publishCommentNotification(comment: Comment, parentComment: Comment?) {
         // For now, we'll notify the parent comment author if it's a reply, otherwise media owner
-        // TODO: Get media owner from TripService to send proper notification
+        val ownerId = if (parentComment != null) parentComment.firebaseId else tripServiceClient.getMediaOwner(comment.mediaId!!)
+
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
             senderId = comment.userId.toString(), // This should be Firebase UID or username
-            receiverIds = emptyList(), // TODO: Get actual receiver IDs (media owner or parent comment author)
+            receiverIds = listOf<String>(ownerId!!),
             collectionReferenceId = null,
             nodeReferenceId = null,
             commentReferenceId = comment.commentId,

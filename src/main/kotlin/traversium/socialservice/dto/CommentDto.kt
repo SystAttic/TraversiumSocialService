@@ -6,6 +6,7 @@ data class CommentDto(
     val commentId: Long?,
     val content: String,
     val userId: Long,
+    val firebaseId: String?,
     val mediaId: Long,
     val parentId: Long?,
     val createdAt: OffsetDateTime? = null,
