@@ -28,7 +28,6 @@ class SocialServiceApplicationTests {
     @MockkBean(relaxed = true)
     lateinit var firebaseAuth: FirebaseAuth
 
-    // 3. Mock Repositories (so H2 works cleanly without real data logic)
     @MockkBean
     lateinit var commentRepository: traversium.socialservice.db.repository.CommentRepository
 

@@ -21,4 +21,17 @@ class TripServiceClient(
             }
             .block()
     }
+
+    fun doesMediaExist(mediaId: Long): Boolean {
+        return tripServiceWebClient.get()
+            .uri("/rest/v1/media/{mediaId}", mediaId)
+            .retrieve()
+            .toBodilessEntity()
+            .map { it.statusCode.is2xxSuccessful }
+            .onErrorResume {
+                // If 404 or service down, assume false
+                Mono.just(false)
+            }
+            .block() ?: false
+    }
 }

@@ -49,6 +49,10 @@ class CommentController(
             ),
             ApiResponse(
                 responseCode = "404",
+                description = "Not found - The specified media does not exist."
+            ),
+            ApiResponse(
+                responseCode = "404",
                 description = "Not found - The specified parent comment does not exist."
             )
         ]
@@ -60,6 +64,9 @@ class CommentController(
         return try {
             val savedComment = commentService.createComment(mediaId, createDto)
             ResponseEntity.status(HttpStatus.CREATED).body(savedComment)
+        } catch(ex: MediaNotFoundException) {
+            logger.warn("Failed to create comment: ${ex.message}")
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch(ex: CommentNotFoundException) {
             logger.warn("Failed to create comment: ${ex.message}")
             ResponseEntity.status(HttpStatus.NOT_FOUND).build()
@@ -148,7 +155,6 @@ class CommentController(
         }
     }
 
-    //TODO: add a 404 response if album does not exist
     @GetMapping("/media/{mediaId}/comments")
     @Operation(
         operationId = "getComments",
@@ -161,6 +167,10 @@ class CommentController(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = Page::class)
                 )]
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Not found - The specified media does not exist."
             )
         ]
     )
@@ -171,6 +181,9 @@ class CommentController(
         return try {
             val commentsPage = commentService.getCommentsForAlbum(mediaId, pageable)
             ResponseEntity.ok(commentsPage)
+        } catch (ex: MediaNotFoundException) {
+            logger.warn("Failed to get comments: ${ex.message}")
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while retrieving top-level comments.", ex)
             ResponseEntity.badRequest().build()

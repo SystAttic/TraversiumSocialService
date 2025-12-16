@@ -22,6 +22,7 @@ import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
 import traversium.socialservice.dto.UpdateCommentDto
 import traversium.socialservice.exceptions.CommentNotFoundException
+import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.exceptions.UnauthorizedCommentAccessException
 import traversium.socialservice.mapper.CommentMapper
 import traversium.socialservice.security.TraversiumAuthentication
@@ -100,6 +101,7 @@ class CommentServiceTest {
         every { commentMapper.toEntity(dto, any(), firebaseId, mediaId, null) } returns commentEntity
         every { commentMapper.toDto(commentEntity) } returns expectedDto
         every { commentRepository.save(commentEntity) } returns commentEntity
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
 
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -133,6 +135,7 @@ class CommentServiceTest {
         val currentUid = "replier-uid"
         val currentUserId = kotlin.math.abs(currentUid.hashCode().toLong())
         val parentId = 50L
+        val mediaId = 100L
         val parentAuthorUid = "parent-author-uid"
 
         val dto = CreateCommentDto(content = "This is a reply", parentId = parentId)
@@ -165,6 +168,8 @@ class CommentServiceTest {
         every { commentRepository.save(newComment) } returns newComment
         every { commentMapper.toDto(newComment) } returns expectedDto
 
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+
         // Mock publishers
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -191,6 +196,7 @@ class CommentServiceTest {
     fun `createComment should throw 404 when parent comment does not exist`() {
         // GIVEN
         val currentUid = "user-1"
+        val mediaId = 100L
         val currentUserId = kotlin.math.abs(currentUid.hashCode().toLong())
         val missingParentId = 999L
         val dto = CreateCommentDto(content = "Reply to ghost", parentId = missingParentId)
@@ -198,6 +204,7 @@ class CommentServiceTest {
         mockAuthenticatedUser(currentUid, currentUserId)
 
         every { commentRepository.findById(missingParentId) } returns Optional.empty()
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
 
         // WHEN & THEN
         val exception = assertThrows<CommentNotFoundException> {
@@ -205,6 +212,26 @@ class CommentServiceTest {
         }
         assertEquals("Parent comment with Id $missingParentId was not found", exception.message)
 
+        verify(exactly = 0) { commentRepository.save(any()) }
+    }
+
+    @Test
+    fun `createComment should throw MediaNotFoundException if media does not exist`() {
+        // GIVEN
+        val mediaId = 999L
+        val dto = CreateCommentDto("Test")
+
+        mockAuthenticatedUser("some-uid", 123L)
+
+        // Mock the check returning FALSE
+        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+
+        // WHEN & THEN
+        assertThrows<MediaNotFoundException> {
+            commentService.createComment(mediaId, dto)
+        }
+
+        // Verify we didn't save anything
         verify(exactly = 0) { commentRepository.save(any()) }
     }
 
@@ -405,6 +432,7 @@ class CommentServiceTest {
 
         every { commentRepository.findByMediaIdAndParentIsNull(mediaId, pageable) } returns page
         every { commentMapper.toDto(commentEntity) } returns commentDto
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
 
         // WHEN
         val result = commentService.getCommentsForAlbum(mediaId, pageable)
@@ -428,6 +456,18 @@ class CommentServiceTest {
         }
 
         verify(exactly = 0) { commentRepository.findByParent_CommentId(any(), any()) }
+    }
+
+    @Test
+    fun `getCommentsForAlbum should throw 404 if media missing`() {
+        val mediaId = 999L
+        val pageable = org.springframework.data.domain.Pageable.unpaged()
+
+        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+
+        assertThrows<MediaNotFoundException> {
+            commentService.getCommentsForAlbum(mediaId, pageable)
+        }
     }
 
     @Test

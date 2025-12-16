@@ -19,6 +19,7 @@ import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
 import traversium.socialservice.dto.UpdateCommentDto
 import traversium.socialservice.exceptions.CommentNotFoundException
+import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.exceptions.UnauthorizedCommentAccessException
 import traversium.socialservice.mapper.CommentMapper
 import java.time.OffsetDateTime
@@ -34,6 +35,10 @@ class CommentService(
     fun createComment(mediaIdFromPath: Long, createDto: CreateCommentDto): CommentDto {
         val authorIdFromAuth = getCurrentUserId()
         val authorFirebaseId = getCurrentUserFirebaseId()
+
+        if (!tripServiceClient.doesMediaExist(mediaIdFromPath)) {
+            throw MediaNotFoundException("Media with ID $mediaIdFromPath does not exist")
+        }
 
         val parentComment: Comment? = createDto.parentId?.let { pid ->
             commentRepository.findById(pid)
@@ -147,7 +152,9 @@ class CommentService(
     }
 
     fun getCommentsForAlbum(mediaId: Long, pageable: Pageable): Page<CommentDto> {
-        //TODO: preveri če media obstaja na TripService
+        if (!tripServiceClient.doesMediaExist(mediaId)) {
+            throw MediaNotFoundException("Media with ID $mediaId does not exist")
+        }
 
         val commentPage: Page<Comment> = commentRepository.findByMediaIdAndParentIsNull(mediaId, pageable)
         return commentPage.map { commentMapper.toDto(it) }

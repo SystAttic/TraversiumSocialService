@@ -16,6 +16,7 @@ import traversium.socialservice.dto.LikeCountDto
 import traversium.socialservice.dto.LikeDto
 import traversium.socialservice.exceptions.DuplicateLikeException
 import traversium.socialservice.exceptions.LikeNotFoundException
+import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.mapper.LikeMapper
 import traversium.socialservice.security.TraversiumAuthentication
 import traversium.socialservice.security.TraversiumPrincipal
@@ -33,6 +34,11 @@ class LikeService(
     fun likeMedia(mediaId: Long): LikeDto {
         val userId = getCurrentUserId()
         val userFirebaseId = getCurrentUserFirebaseId()
+
+        // Check if media exists
+        if (!tripServiceClient.doesMediaExist(mediaId)) {
+            throw MediaNotFoundException("Media with ID $mediaId does not exist")
+        }
 
         // Check if user has already liked this media
         if (likeRepository.existsByUserIdAndMediaId(userId, mediaId)) {

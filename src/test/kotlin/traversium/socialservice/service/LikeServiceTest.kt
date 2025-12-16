@@ -21,6 +21,7 @@ import traversium.socialservice.db.repository.LikeRepository
 import traversium.socialservice.dto.LikeDto
 import traversium.socialservice.exceptions.DuplicateLikeException
 import traversium.socialservice.exceptions.LikeNotFoundException
+import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.mapper.LikeMapper
 import traversium.socialservice.security.TraversiumAuthentication
 import traversium.socialservice.security.TraversiumPrincipal
@@ -90,6 +91,7 @@ class LikeServiceTest {
         every { likeMapper.toDto(likeEntity) } returns likeDto
 
         every { tripServiceClient.getMediaOwner(mediaId) } returns ownerId
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
 
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -131,6 +133,8 @@ class LikeServiceTest {
 
         every { likeRepository.existsByUserIdAndMediaId(userId, mediaId) } returns true
 
+        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+
         // WHEN & THEN
         val ex = assertThrows<DuplicateLikeException> {
             likeService.likeMedia(mediaId)
@@ -141,6 +145,26 @@ class LikeServiceTest {
         verify(exactly = 0) { likeRepository.save(any()) }
         verify(exactly = 0) { tripServiceClient.getMediaOwner(any()) }
         verify(exactly = 0) { eventPublisher.publishEvent(any()) }
+    }
+
+    @Test
+    fun `likeMedia should throw MediaNotFoundException if media does not exist`() {
+        // GIVEN
+        val mediaId = 999L
+        val firebaseId = "user-1"
+        val userId = kotlin.math.abs(firebaseId.hashCode().toLong())
+
+        mockAuthenticatedUser(firebaseId, userId) // Helper from previous steps
+
+        // Mock the check returning FALSE
+        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+
+        // WHEN & THEN
+        assertThrows<MediaNotFoundException> {
+            likeService.likeMedia(mediaId)
+        }
+
+        verify(exactly = 0) { likeRepository.save(any()) }
     }
 
     @Test

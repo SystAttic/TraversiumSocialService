@@ -15,6 +15,7 @@ import traversium.socialservice.dto.LikeCountDto
 import traversium.socialservice.dto.LikeDto
 import traversium.socialservice.exceptions.DuplicateLikeException
 import traversium.socialservice.exceptions.LikeNotFoundException
+import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.security.TraversiumAuthentication
 import traversium.socialservice.security.TraversiumPrincipal
 import traversium.socialservice.service.LikeService
@@ -48,6 +49,10 @@ class LikeController(
             ApiResponse(
                 responseCode = "401",
                 description = "Unauthorized - Authentication required."
+            ),
+            ApiResponse(
+                responseCode = "404",
+                description = "Not found - The specified media does not exist."
             )
         ]
     )
@@ -58,6 +63,9 @@ class LikeController(
         } catch (ex: DuplicateLikeException) {
             logger.warn("Attempted to like already liked media $mediaId: ${ex.message}")
             ResponseEntity.status(HttpStatus.CONFLICT).build()
+        } catch (ex: MediaNotFoundException) {
+            logger.warn("Attempted to like nonexistent media $mediaId: ${ex.message}")
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while liking media $mediaId", ex)
             ResponseEntity.badRequest().build()
