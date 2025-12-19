@@ -122,6 +122,7 @@ class CommentService(
             commentReferenceId = comment.commentId,
             action = if (parentComment != null) ActionType.REPLY else ActionType.ADD,
             mediaReferenceId = comment.mediaId,
+            mediaCount = null
         )
         eventPublisher.publishEvent(notification)
     }

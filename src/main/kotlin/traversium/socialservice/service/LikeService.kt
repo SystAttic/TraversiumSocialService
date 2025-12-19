@@ -86,7 +86,8 @@ class LikeService(
             nodeReferenceId = null,
             commentReferenceId = null,
             action = ActionType.LIKE,
-            mediaReferenceId = mediaId
+            mediaReferenceId = mediaId,
+            mediaCount = null
         )
         eventPublisher.publishEvent(notification)
     }
