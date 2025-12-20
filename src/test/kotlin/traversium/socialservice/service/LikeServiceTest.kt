@@ -90,8 +90,8 @@ class LikeServiceTest {
         every { likeRepository.save(likeEntity) } returns likeEntity
         every { likeMapper.toDto(likeEntity) } returns likeDto
 
-        every { tripServiceClient.getMediaOwner(mediaId) } returns ownerId
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.getMediaOwner(mediaId, any()) } returns ownerId
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -133,7 +133,7 @@ class LikeServiceTest {
 
         every { likeRepository.existsByUserIdAndMediaId(userId, mediaId) } returns true
 
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         // WHEN & THEN
         val ex = assertThrows<DuplicateLikeException> {
@@ -143,7 +143,7 @@ class LikeServiceTest {
 
         // Verify we never attempted to save or call external services
         verify(exactly = 0) { likeRepository.save(any()) }
-        verify(exactly = 0) { tripServiceClient.getMediaOwner(any()) }
+        verify(exactly = 0) { tripServiceClient.getMediaOwner(any(), any()) }
         verify(exactly = 0) { eventPublisher.publishEvent(any()) }
     }
 
@@ -157,7 +157,7 @@ class LikeServiceTest {
         mockAuthenticatedUser(firebaseId, userId) // Helper from previous steps
 
         // Mock the check returning FALSE
-        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns false
 
         // WHEN & THEN
         assertThrows<MediaNotFoundException> {

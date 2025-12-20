@@ -34,9 +34,10 @@ class LikeService(
     fun likeMedia(mediaId: Long): LikeDto {
         val userId = getCurrentUserId()
         val userFirebaseId = getCurrentUserFirebaseId()
+        val authHeader = getAuthorizationHeader()
 
         // Check if media exists
-        if (!tripServiceClient.doesMediaExist(mediaId)) {
+        if (!tripServiceClient.doesMediaExist(mediaId, authHeader)) {
             throw MediaNotFoundException("Media with ID $mediaId does not exist")
         }
 
@@ -49,7 +50,7 @@ class LikeService(
         val savedLike = likeRepository.save(newLike)
 
         // Publish notification event (notify media owner)
-        publishLikeNotification(userId.toString(), mediaId)
+        publishLikeNotification(userId.toString(), mediaId, authHeader)
 
         // Publish audit event
         publishLikeAuditEvent(userFirebaseId, "LIKE_CREATED", savedLike.likeId, mediaId)
@@ -76,8 +77,8 @@ class LikeService(
         publishLikeAuditEvent(userFirebaseId, "LIKE_DELETED", likeId, mediaId)
     }
 
-    private fun publishLikeNotification(userId: String, mediaId: Long) {
-        val ownerId = tripServiceClient.getMediaOwner(mediaId)
+    private fun publishLikeNotification(userId: String, mediaId: Long, authHeader: String?) {
+        val ownerId = tripServiceClient.getMediaOwner(mediaId, authHeader)
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
             senderId = userId,
