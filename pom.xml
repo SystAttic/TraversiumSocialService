@@ -122,6 +122,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
             
         <!-- ELK Stack -->
         <dependency>
@@ -202,7 +203,8 @@
                         <groupId>org.jetbrains.kotlin</groupId>
                         <artifactId>kotlin-maven-noarg</artifactId>
                         <version>${kotlin.version}</version>
-                    </dependency>                </dependencies>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
