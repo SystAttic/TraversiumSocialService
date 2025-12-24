@@ -21,6 +21,7 @@ import traversium.socialservice.db.repository.CommentRepository
 import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
 import traversium.socialservice.dto.UpdateCommentDto
+import traversium.socialservice.exceptions.CommentModerationException
 import traversium.socialservice.exceptions.CommentNotFoundException
 import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.exceptions.UnauthorizedCommentAccessException
@@ -43,6 +44,9 @@ class CommentServiceTest {
 
     @MockK
     lateinit var tripServiceClient: TripServiceClient
+
+    @MockK
+    lateinit var moderationClient: ModerationServiceGrpcClient
 
     @InjectMockKs
     lateinit var commentService: CommentService
@@ -102,6 +106,7 @@ class CommentServiceTest {
         every { commentMapper.toDto(commentEntity) } returns expectedDto
         every { commentRepository.save(commentEntity) } returns commentEntity
         every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -169,6 +174,7 @@ class CommentServiceTest {
         every { commentMapper.toDto(newComment) } returns expectedDto
 
         every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         // Mock publishers
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
@@ -205,6 +211,7 @@ class CommentServiceTest {
 
         every { commentRepository.findById(missingParentId) } returns Optional.empty()
         every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         // WHEN & THEN
         val exception = assertThrows<CommentNotFoundException> {
@@ -225,6 +232,7 @@ class CommentServiceTest {
 
         // Mock the check returning FALSE
         every { tripServiceClient.doesMediaExist(mediaId, any()) } returns false
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         // WHEN & THEN
         assertThrows<MediaNotFoundException> {
@@ -232,6 +240,25 @@ class CommentServiceTest {
         }
 
         // Verify we didn't save anything
+        verify(exactly = 0) { commentRepository.save(any()) }
+    }
+
+    @Test
+    fun `createComment should throw OffensiveContentException if content is offensive`() {
+        // GIVEN
+        val mediaId = 100L
+        val dto = CreateCommentDto("You are stupid")
+
+        mockAuthenticatedUser("uid", 1L)
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
+
+        every { moderationClient.isTextAllowed(dto.content) } returns false
+
+        // WHEN & THEN
+        assertThrows<CommentModerationException> {
+            commentService.createComment(mediaId, dto)
+        }
+
         verify(exactly = 0) { commentRepository.save(any()) }
     }
 
@@ -275,6 +302,7 @@ class CommentServiceTest {
         every { commentRepository.save(any()) } returns updatedComment
 
         every { commentMapper.toDto(updatedComment) } returns expectedDto
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
 
@@ -323,6 +351,7 @@ class CommentServiceTest {
         mockAuthenticatedUser(currentUserFirebaseId, currentUserId)
 
         every { commentRepository.findById(commentId) } returns Optional.of(existingComment)
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         // WHEN & THEN
         assertThrows<UnauthorizedCommentAccessException> {
@@ -339,6 +368,7 @@ class CommentServiceTest {
         val dto = UpdateCommentDto("New content")
 
         every { commentRepository.findById(999L) } returns Optional.empty()
+        every { moderationClient.isTextAllowed(any()) } returns true
 
         // WHEN & THEN
         assertThrows<CommentNotFoundException> {
