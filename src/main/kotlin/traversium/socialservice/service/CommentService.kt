@@ -18,6 +18,7 @@ import traversium.socialservice.db.repository.CommentRepository
 import traversium.socialservice.dto.CommentDto
 import traversium.socialservice.dto.CreateCommentDto
 import traversium.socialservice.dto.UpdateCommentDto
+import traversium.socialservice.exceptions.CommentModerationException
 import traversium.socialservice.exceptions.CommentNotFoundException
 import traversium.socialservice.exceptions.MediaNotFoundException
 import traversium.socialservice.exceptions.UnauthorizedCommentAccessException
@@ -29,7 +30,8 @@ class CommentService(
     private val commentRepository: CommentRepository,
     private val commentMapper: CommentMapper,
     private val eventPublisher: ApplicationEventPublisher,
-    private val tripServiceClient: TripServiceClient
+    private val tripServiceClient: TripServiceClient,
+    private val moderationClient: ModerationServiceGrpcClient
 ) : SocialService(), Logging {
     @Transactional
     fun createComment(mediaIdFromPath: Long, createDto: CreateCommentDto): CommentDto {
@@ -43,6 +45,10 @@ class CommentService(
         val parentComment: Comment? = createDto.parentId?.let { pid ->
             commentRepository.findById(pid)
                 .orElseThrow { CommentNotFoundException("Parent comment with Id $pid was not found") }
+        }
+
+        if (!moderationClient.isTextAllowed(createDto.content)) {
+            throw CommentModerationException("Comment contains offensive content")
         }
 
         val newCommentEntity = commentMapper.toEntity(
@@ -76,6 +82,10 @@ class CommentService(
 
         if(comment.userId != authorIdFromAuth) {
             throw UnauthorizedCommentAccessException("User is not authorized to update this comment")
+        }
+
+        if (!moderationClient.isTextAllowed(updateDto.content)) {
+            throw CommentModerationException("Comment contains offensive content")
         }
 
         comment.content = updateDto.content

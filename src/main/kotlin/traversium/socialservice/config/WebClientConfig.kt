@@ -7,7 +7,7 @@ import org.springframework.web.reactive.function.client.WebClient
 
 @Configuration
 class WebClientConfig(
-    @param:Value("\${trip-service.url}")
+    @param:Value("\${trip-service.url:http://localhost:8080}")
     private val tripServiceUrl: String
 ) {
 
