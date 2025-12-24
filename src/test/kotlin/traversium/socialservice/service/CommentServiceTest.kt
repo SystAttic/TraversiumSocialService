@@ -97,11 +97,11 @@ class CommentServiceTest {
 
         mockAuthenticatedUser(firebaseId, userId)
 
-        every { tripServiceClient.getMediaOwner(mediaId) } returns mediaOwnerId
+        every { tripServiceClient.getMediaOwner(mediaId, any()) } returns mediaOwnerId
         every { commentMapper.toEntity(dto, any(), firebaseId, mediaId, null) } returns commentEntity
         every { commentMapper.toDto(commentEntity) } returns expectedDto
         every { commentRepository.save(commentEntity) } returns commentEntity
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
         justRun { eventPublisher.publishEvent(any<AuditStreamData>()) }
@@ -168,7 +168,7 @@ class CommentServiceTest {
         every { commentRepository.save(newComment) } returns newComment
         every { commentMapper.toDto(newComment) } returns expectedDto
 
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         // Mock publishers
         justRun { eventPublisher.publishEvent(any<NotificationStreamData>()) }
@@ -189,7 +189,7 @@ class CommentServiceTest {
         }
 
         // TripService should NOT be called for a reply (based on your service logic optimization)
-        verify(exactly = 0) { tripServiceClient.getMediaOwner(any()) }
+        verify(exactly = 0) { tripServiceClient.getMediaOwner(any(), any()) }
     }
 
     @Test
@@ -204,7 +204,7 @@ class CommentServiceTest {
         mockAuthenticatedUser(currentUid, currentUserId)
 
         every { commentRepository.findById(missingParentId) } returns Optional.empty()
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         // WHEN & THEN
         val exception = assertThrows<CommentNotFoundException> {
@@ -224,7 +224,7 @@ class CommentServiceTest {
         mockAuthenticatedUser("some-uid", 123L)
 
         // Mock the check returning FALSE
-        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns false
 
         // WHEN & THEN
         assertThrows<MediaNotFoundException> {
@@ -430,9 +430,11 @@ class CommentServiceTest {
 
         val page = org.springframework.data.domain.PageImpl(listOf(commentEntity))
 
+        mockAuthenticatedUser("test-uid", 1L)
+
         every { commentRepository.findByMediaIdAndParentIsNull(mediaId, pageable) } returns page
         every { commentMapper.toDto(commentEntity) } returns commentDto
-        every { tripServiceClient.doesMediaExist(mediaId) } returns true
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns true
 
         // WHEN
         val result = commentService.getCommentsForAlbum(mediaId, pageable)
@@ -463,7 +465,9 @@ class CommentServiceTest {
         val mediaId = 999L
         val pageable = org.springframework.data.domain.Pageable.unpaged()
 
-        every { tripServiceClient.doesMediaExist(mediaId) } returns false
+        mockAuthenticatedUser("test-uid", 1L)
+
+        every { tripServiceClient.doesMediaExist(mediaId, any()) } returns false
 
         assertThrows<MediaNotFoundException> {
             commentService.getCommentsForAlbum(mediaId, pageable)

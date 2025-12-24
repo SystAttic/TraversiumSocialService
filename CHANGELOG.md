@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Add multitenancy support
+- Prometheus metrics endpoint
+- ELK stack integration
 
 ## [1.0.0] - 2025-11-30
 ### Added

@@ -1,5 +1,6 @@
 package traversium.socialservice.client
 
+import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
@@ -10,9 +11,10 @@ import org.springframework.web.reactive.function.client.bodyToMono
 class TripServiceClient(
     private val tripServiceWebClient: WebClient
 ) {
-    fun getMediaOwner(mediaId: Long): String? {
+    fun getMediaOwner(mediaId: Long, token: String?): String? {
         return tripServiceWebClient.get()
             .uri("/rest/v1/media/{mediaId}", mediaId)
+            .header(HttpHeaders.AUTHORIZATION, token)
             .retrieve()
             .bodyToMono<MediaDto>()
             .map {it.uploader}
@@ -22,9 +24,10 @@ class TripServiceClient(
             .block()
     }
 
-    fun doesMediaExist(mediaId: Long): Boolean {
+    fun doesMediaExist(mediaId: Long, token: String?): Boolean {
         return tripServiceWebClient.get()
             .uri("/rest/v1/media/{mediaId}", mediaId)
+            .header(HttpHeaders.AUTHORIZATION, token)
             .retrieve()
             .toBodilessEntity()
             .map { it.statusCode.is2xxSuccessful }

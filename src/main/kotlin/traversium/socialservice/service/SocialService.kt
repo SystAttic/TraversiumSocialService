@@ -27,4 +27,11 @@ abstract class SocialService {
 
         return principal.uid
     }
+
+    protected fun getAuthorizationHeader(): String? {
+        val authentication = SecurityContextHolder.getContext().authentication as? TraversiumAuthentication
+            ?: return null
+
+        return authentication.token?.let { "Bearer $it" }
+    }
 }

@@ -37,8 +37,9 @@ class CommentService(
     fun createComment(mediaIdFromPath: Long, createDto: CreateCommentDto): CommentDto {
         val authorIdFromAuth = getCurrentUserId()
         val authorFirebaseId = getCurrentUserFirebaseId()
+        val authHeader = getAuthorizationHeader()
 
-        if (!tripServiceClient.doesMediaExist(mediaIdFromPath)) {
+        if (!tripServiceClient.doesMediaExist(mediaIdFromPath, authHeader)) {
             throw MediaNotFoundException("Media with ID $mediaIdFromPath does not exist")
         }
 
@@ -62,7 +63,7 @@ class CommentService(
         val savedCommentEntity = commentRepository.save(newCommentEntity)
 
         // Publish notification event (notify media owner or parent comment author)
-        publishCommentNotification(savedCommentEntity, parentComment)
+        publishCommentNotification(savedCommentEntity, parentComment, authHeader)
 
         // Publish audit event
         publishCommentAuditEvent(authorFirebaseId, "COMMENT_CREATED", savedCommentEntity.commentId, mediaIdFromPath)
@@ -119,9 +120,9 @@ class CommentService(
         publishCommentAuditEvent(authorFirebaseId, "COMMENT_DELETED", commentId, mediaId!!)
     }
 
-    private fun publishCommentNotification(comment: Comment, parentComment: Comment?) {
+    private fun publishCommentNotification(comment: Comment, parentComment: Comment?, authHeader: String?) {
         // For now, we'll notify the parent comment author if it's a reply, otherwise media owner
-        val ownerId = if (parentComment != null) parentComment.firebaseId else tripServiceClient.getMediaOwner(comment.mediaId!!)
+        val ownerId = if (parentComment != null) parentComment.firebaseId else tripServiceClient.getMediaOwner(comment.mediaId!!, authHeader)
 
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
@@ -132,6 +133,7 @@ class CommentService(
             commentReferenceId = comment.commentId,
             action = if (parentComment != null) ActionType.REPLY else ActionType.ADD,
             mediaReferenceId = comment.mediaId,
+            mediaCount = null
         )
         eventPublisher.publishEvent(notification)
     }
@@ -162,7 +164,9 @@ class CommentService(
     }
 
     fun getCommentsForAlbum(mediaId: Long, pageable: Pageable): Page<CommentDto> {
-        if (!tripServiceClient.doesMediaExist(mediaId)) {
+        val authHeader = getAuthorizationHeader()
+
+        if (!tripServiceClient.doesMediaExist(mediaId, authHeader)) {
             throw MediaNotFoundException("Media with ID $mediaId does not exist")
         }
 
