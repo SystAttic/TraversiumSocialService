@@ -6,6 +6,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import traversium.moderation.textmoderation.TextModerationServiceGrpc
+import traversium.socialservice.security.GrpcAuthClientInterceptor
 
 @EnableConfigurationProperties(GrpcProperties::class)
 @Configuration
@@ -18,7 +19,12 @@ class GrpcClientConfig {
             .build()
 
     @Bean
-    fun moderationStub(channel: ManagedChannel): TextModerationServiceGrpc.TextModerationServiceBlockingStub =
-        TextModerationServiceGrpc.newBlockingStub(channel)
+    fun moderationStub(
+        moderationGrpcChannel: ManagedChannel,
+        authInterceptor: GrpcAuthClientInterceptor
+    ): TextModerationServiceGrpc.TextModerationServiceBlockingStub =
+        TextModerationServiceGrpc
+            .newBlockingStub(moderationGrpcChannel)
+            .withInterceptors(authInterceptor)
 
 }
