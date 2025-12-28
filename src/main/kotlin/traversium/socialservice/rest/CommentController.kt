@@ -45,15 +45,11 @@ class CommentController(
             ),
             ApiResponse(
                 responseCode = "400",
-                description = "Bad request - Invalid comment data provided"
+                description = "Bad request - Moderation service rejected comment or invalid comment data provided"
             ),
             ApiResponse(
                 responseCode = "404",
-                description = "Not found - The specified media does not exist."
-            ),
-            ApiResponse(
-                responseCode = "404",
-                description = "Not found - The specified parent comment does not exist."
+                description = "Not found - The specified media or parent comment does not exist."
             )
         ]
     )
@@ -88,6 +84,10 @@ class CommentController(
                     mediaType = MediaType.APPLICATION_JSON_VALUE,
                     schema = Schema(implementation = CommentDto::class)
                 )]
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "Moderation service rejected comment."
             ),
             ApiResponse(
                 responseCode = "403",
