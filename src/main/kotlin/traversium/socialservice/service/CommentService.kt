@@ -166,8 +166,11 @@ class CommentService(
     fun getCommentsForAlbum(mediaId: Long, pageable: Pageable): Page<CommentDto> {
         val authHeader = getAuthorizationHeader()
 
+        // Check if media exists, but if it doesn't, return empty page instead of throwing exception
+        // This allows the frontend to handle media without comments gracefully
         if (!tripServiceClient.doesMediaExist(mediaId, authHeader)) {
-            throw MediaNotFoundException("Media with ID $mediaId does not exist")
+            logger.warn("Media with ID $mediaId does not exist in TripService, returning empty comments page")
+            return Page.empty(pageable)
         }
 
         val commentPage: Page<Comment> = commentRepository.findByMediaIdAndParentIsNull(mediaId, pageable)

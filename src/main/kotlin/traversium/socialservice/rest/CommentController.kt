@@ -181,12 +181,10 @@ class CommentController(
         return try {
             val commentsPage = commentService.getCommentsForAlbum(mediaId, pageable)
             ResponseEntity.ok(commentsPage)
-        } catch (ex: MediaNotFoundException) {
-            logger.warn("Failed to get comments: ${ex.message}")
-            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
         } catch (ex: Exception) {
             logger.error("An unexpected error occurred while retrieving top-level comments.", ex)
-            ResponseEntity.badRequest().build()
+            // Return empty page instead of error to allow graceful handling
+            ResponseEntity.ok(Page.empty(pageable))
         }
     }
 
