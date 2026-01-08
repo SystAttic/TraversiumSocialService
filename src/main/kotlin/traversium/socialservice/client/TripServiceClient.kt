@@ -6,6 +6,8 @@ import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import traversium.socialservice.dto.MediaDto
 import org.springframework.web.reactive.function.client.bodyToMono
+import traversium.commonmultitenancy.TenantContext
+import traversium.commonmultitenancy.TenantUtils
 
 @Component
 class TripServiceClient(
@@ -15,6 +17,7 @@ class TripServiceClient(
         return tripServiceWebClient.get()
             .uri("/rest/v1/media/{mediaId}", mediaId)
             .header(HttpHeaders.AUTHORIZATION, token)
+            .header("X-Tenant-Id", TenantUtils.desanitizeTenantIdFromSchema(TenantContext.getTenant()))
             .retrieve()
             .bodyToMono<MediaDto>()
             .map {it.uploader}
@@ -28,6 +31,7 @@ class TripServiceClient(
         return tripServiceWebClient.get()
             .uri("/rest/v1/media/{mediaId}", mediaId)
             .header(HttpHeaders.AUTHORIZATION, token)
+            .header("X-Tenant-Id", TenantUtils.desanitizeTenantIdFromSchema(TenantContext.getTenant()))
             .retrieve()
             .toBodilessEntity()
             .map { it.statusCode.is2xxSuccessful }
