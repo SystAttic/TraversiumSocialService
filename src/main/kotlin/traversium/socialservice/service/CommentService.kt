@@ -126,7 +126,7 @@ class CommentService(
 
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
-            senderId = comment.userId.toString(), // This should be Firebase UID or username
+            senderId = comment.firebaseId, // This should be Firebase UID or username
             receiverIds = listOf<String>(ownerId!!),
             collectionReferenceId = null,
             nodeReferenceId = null,
@@ -138,10 +138,10 @@ class CommentService(
         eventPublisher.publishEvent(notification)
     }
 
-    private fun publishCommentAuditEvent(userId: String, action: String, commentId: Long?, mediaId: Long) {
+    private fun publishCommentAuditEvent(userFirebaseId: String, action: String, commentId: Long?, mediaId: Long) {
         val auditEvent = AuditStreamData(
             timestamp = OffsetDateTime.now(),
-            userId = userId,
+            userId = userFirebaseId,
             activityType = ActivityType.SOCIAL_ACTIVITY,
             action = action,
             entityType = EntityType.COMMENT,

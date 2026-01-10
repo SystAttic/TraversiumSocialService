@@ -50,7 +50,7 @@ class LikeService(
         val savedLike = likeRepository.save(newLike)
 
         // Publish notification event (notify media owner)
-        publishLikeNotification(userId.toString(), mediaId, authHeader)
+        publishLikeNotification(userFirebaseId, mediaId, authHeader)
 
         // Publish audit event
         publishLikeAuditEvent(userFirebaseId, "LIKE_CREATED", savedLike.likeId, mediaId)
@@ -77,11 +77,11 @@ class LikeService(
         publishLikeAuditEvent(userFirebaseId, "LIKE_DELETED", likeId, mediaId)
     }
 
-    private fun publishLikeNotification(userId: String, mediaId: Long, authHeader: String?) {
+    private fun publishLikeNotification(userFirebaseId: String, mediaId: Long, authHeader: String?) {
         val ownerId = tripServiceClient.getMediaOwner(mediaId, authHeader)
         val notification = NotificationStreamData(
             timestamp = OffsetDateTime.now(),
-            senderId = userId,
+            senderId = userFirebaseId,
             receiverIds = listOf<String>(ownerId!!),
             collectionReferenceId = null,
             nodeReferenceId = null,
@@ -93,10 +93,10 @@ class LikeService(
         eventPublisher.publishEvent(notification)
     }
 
-    private fun publishLikeAuditEvent(userId: String, action: String, likeId: Long?, mediaId: Long) {
+    private fun publishLikeAuditEvent(userFirebaseId: String, action: String, likeId: Long?, mediaId: Long) {
         val auditEvent = AuditStreamData(
             timestamp = OffsetDateTime.now(),
-            userId = userId,
+            userId = userFirebaseId,
             activityType = ActivityType.SOCIAL_ACTIVITY,
             action = action,
             entityType = EntityType.LIKE,
