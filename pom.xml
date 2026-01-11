@@ -10,7 +10,7 @@
     </parent>
     <groupId>traversium</groupId>
     <artifactId>SocialService</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0-SNAPSHOT</version>
     <name>SocialService</name>
     <description>SocialService</description>
 
